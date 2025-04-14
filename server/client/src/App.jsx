@@ -225,7 +225,7 @@ const TerminalChat = () => {
       
       <footer className="app-footer">
         <div className="network-status">
-          <span className="network-indicator"></span> Connected to Ethereum Mainnet
+          <span className="network-indicator"></span> Connected
         </div>
       </footer>
     </div>
