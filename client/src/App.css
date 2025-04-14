@@ -1,0 +1,98 @@
+/* client/src/App.css */
+body {
+  font-family: sans-serif;
+  margin: 0;
+  background-color: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.chat-container {
+  width: 90%;
+  max-width: 600px;
+  height: 80vh; /* Stała wysokość kontenera */
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Zapobiega rozciąganiu przez zawartość */
+}
+
+.chat-messages {
+  flex-grow: 1; /* Zajmuje dostępną przestrzeń */
+  padding: 20px;
+  overflow-y: auto; /* Umożliwia przewijanie tylko wiadomości */
+  border-bottom: 1px solid #eee;
+  display: flex; /* Umożliwia elastyczne rozmieszczenie wiadomości */
+  flex-direction: column; /* Wiadomości jedna pod drugą */
+}
+
+.message {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  border-radius: 18px;
+  max-width: 75%; /* Wiadomość nie zajmuje całej szerokości */
+  word-wrap: break-word; /* Łamanie długich słów */
+}
+
+.message p {
+  margin: 0;
+}
+
+.message.user {
+  background-color: #007bff;
+  color: white;
+  align-self: flex-end; /* Wyrównaj do prawej */
+  border-bottom-right-radius: 5px; /* Małe dostosowanie wyglądu */
+}
+
+.message.model {
+  background-color: #e9e9eb;
+  color: #333;
+  align-self: flex-start; /* Wyrównaj do lewej */
+  border-bottom-left-radius: 5px; /* Małe dostosowanie wyglądu */
+}
+
+.chat-input-area {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #eee;
+  background-color: #f8f8f8;
+}
+
+.chat-input-area textarea {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  margin-right: 10px;
+  resize: none; /* Wyłącz możliwość ręcznej zmiany rozmiaru */
+  font-size: 1em;
+  line-height: 1.4;
+  min-height: 20px; /* Minimalna wysokość */
+  max-height: 100px; /* Maksymalna wysokość przed pojawieniem się paska przewijania */
+  overflow-y: auto; /* Pasek przewijania gdy tekst jest dłuższy */
+}
+
+.chat-input-area button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s ease;
+}
+
+.chat-input-area button:hover {
+  background-color: #0056b3;
+}
+
+.chat-input-area button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
