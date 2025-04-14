@@ -164,11 +164,11 @@ const TerminalChat = () => {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>aiQbek <span className="version">v0.1.0</span> <span className="cursor"></span></h1>
+        <h1>aiQbek <span className="version">v0.1.0</span></h1>
         <div className="header-links">
           <a href="https://twitter.com/jaqbek_eth" target="_blank" rel="noopener noreferrer">@jaqbek_eth</a> | 
           <a href="https://github.com/0xjaqbek" target="_blank" rel="noopener noreferrer">0xjaqbek</a> | 
-          <a href="https://becomingweb3.dev" target="_blank" rel="noopener noreferrer">becomingweb3.dev</a>
+          <a href="https://t.me/jaqbek" target="_blank" rel="noopener noreferrer">telegram</a>
         </div>
       </header>
       
