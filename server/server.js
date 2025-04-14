@@ -1,17 +1,16 @@
-// server/server.js - Using ES Module approach with system instruction
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Server.js with instructions for aiQbek as a user message
 import express from 'express';
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // In ES modules, __dirname is not available, so we create it
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
-
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -19,89 +18,110 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Define the system instruction for JaqBot
-const systemInstruction = "You are JaqBot, a friendly crypto-native AI assistant with knowledge of Web3, blockchain, and development. Respond in a conversational tone with occasional crypto slang.";
+// Define aiQbek instructions as a message to prepend
+const botInstructions = `You are aiQbek, a witty, crypto-native AI with a passion for Web3 development and a touch of humor. Use a conversational tone with crypto slang and memes where appropriate. You're knowledgeable about blockchain technologies, smart contracts, and decentralized applications. Provide insights into coding practices especially in JavaScript and TypeScript. Offer perspectives on trading strategies and tokenomics. Educate users about Web3 topics. Your persona is associated with Twitter @jaqbek_eth, GitHub 0xjaqbek, and website becomingweb3.dev. When you don't know something, be honest but guide users to find information.`;
 
-// API routes should come before the catch-all route
+// API route
 app.post('/api/chat', async (req, res) => {
     try {
-        const { history, message } = req.body;
-
-        if (!message) {
-            return res.status(400).json({ error: 'No message in request.' });
-        }
-
+        const { message, history = [] } = req.body;
         const apiKey = process.env.API_KEY;
+        
         if (!apiKey) {
-            console.error("ERROR: API_KEY not found in .env file");
-            return res.status(500).json({ error: 'Server configuration error.' });
-        }
-
-        // Format the history for the API, ensuring correct roles
-        const chatHistory = (history || []).map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-        }));
-
-        // Ensure the first message in history (if it exists) is a user message.
-        if (chatHistory.length > 0 && chatHistory[0].role !== 'user') {
-            console.warn("Received chat history that doesn't start with user message. Check frontend logic.");
+            return res.status(500).json({ error: 'API key missing' });
         }
         
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-        });
-
-        const generationConfig = {
-            temperature: 0.9,
-            topK: 1,
-            topP: 1,
-            maxOutputTokens: 2048,
-        };
-
-        const safetySettings = [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        ];
-
-        // Start the chat session with the provided history AND system instruction
-        const chat = model.startChat({
-            generationConfig,
-            safetySettings,
-            history: chatHistory,
-            systemInstruction: systemInstruction, // Add the system instruction here
-        });
-
-        const result = await chat.sendMessage(message);
-        const response = await result.response;
-
-        if (!response.candidates || response.candidates.length === 0 || !response.candidates[0].content) {
-            const blockReason = response.promptFeedback?.blockReason;
-            console.warn("AI response was blocked.", blockReason ? `Reason: ${blockReason}` : '');
-            return res.status(500).json({ error: 'AI response was blocked due to safety settings.', details: blockReason });
+        console.log("Received message:", message);
+        console.log("History length:", history.length);
+        
+        // Format the history for the Gemini API
+        let formattedHistory = [];
+        
+        // If there is history, format it appropriately
+        if (history.length > 0) {
+            // Make sure the first message is from the user
+            let startIndex = 0;
+            if (history[0].role === 'model') {
+                console.log("Removing model message from the beginning of history");
+                startIndex = 1;
+            }
+            
+            // Convert each message to the Gemini API format
+            for (let i = startIndex; i < history.length; i++) {
+                const item = history[i];
+                formattedHistory.push({
+                    role: item.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: item.text }]
+                });
+            }
         }
-
-        const aiResponseText = response.text();
-
-        res.json({ response: aiResponseText });
-
+        
+        // For the first message, include instructions as a user message followed by model response
+        if (formattedHistory.length === 0) {
+            // Add the instructions as a user message
+            formattedHistory = [
+                {
+                    role: "user", 
+                    parts: [{ text: botInstructions }]
+                },
+                {
+                    role: "model",
+                    parts: [{ text: "I understand! I'll be aiQbek, a crypto-native AI assistant with Web3 knowledge and a bit of humor. I'll keep my responses conversational with appropriate crypto slang, focus on blockchain tech, smart contracts, dApps, JavaScript/TypeScript, and trading strategies. Let me know how I can help you explore the Web3 space!" }]
+                }
+            ];
+        }
+        
+        // Add the current user message
+        formattedHistory.push({
+            role: "user",
+            parts: [{ text: message }]
+        });
+        
+        console.log("Sending formatted request to Gemini API");
+        
+        // Use the working model name
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.0-flash"
+        });
+        
+        // Format the request according to the API
+        const result = await model.generateContent({
+            contents: formattedHistory,
+            generationConfig: {
+                temperature: 0.9,
+                topK: 1,
+                topP: 1,
+                maxOutputTokens: 2048,
+            },
+            safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+            ]
+        });
+        
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log("Received response:", text.substring(0, 50) + "...");
+        return res.json({ response: text });
     } catch (error) {
-        console.error("Error communicating with Gemini API:", error);
-        res.status(500).json({ error: 'Server error while processing request.' });
+        console.error("API Error:", error);
+        return res.status(500).json({ 
+            error: 'Error communicating with Gemini API', 
+            details: error.toString() 
+        });
     }
 });
 
-// Serve static files from the client (after build)
+// Static files and catch-all route
 app.use(express.static(path.join(__dirname, "./dist")));
-
-// This should be the LAST route - catch-all for client-side routing
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "./dist/index.html"));
 });
 
 app.listen(port, () => {
-    console.log(`Backend server listening at http://localhost:${port}`);
+    console.log(`Server listening on port ${port}`);
 });

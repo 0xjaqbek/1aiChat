@@ -3,16 +3,18 @@ import './App.css'
 
 const TerminalChat = () => {
   const [messages, setMessages] = useState([]);
+  const [displayMessages, setDisplayMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
-  // Add initial welcome message from JaqBot
+  // Add initial welcome message from aiQbek - for display only, not sent to API
   useEffect(() => {
-    setMessages([{
-      text: "GM! I'm JaqBot, your crypto-native assistant. Ready to dive into Web3, smart contracts, or anything blockchain? WAGMI! 🚀",
+    setDisplayMessages([{
+      text: "GM! I'm aiQbek, your crypto-native assistant. Ready to dive into Web3, smart contracts, or anything blockchain? WAGMI! 🚀",
       role: 'model',
       timestamp: new Date().toISOString()
     }]);
@@ -21,11 +23,20 @@ const TerminalChat = () => {
   // Auto scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [displayMessages]);
 
   // Focus input on load
   useEffect(() => {
     inputRef.current?.focus();
+  }, []);
+
+  // Clean up any pending requests when component unmounts
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const handleInputChange = (e) => {
@@ -37,6 +48,14 @@ const TerminalChat = () => {
     
     if (!inputValue.trim()) return;
     
+    // Cancel any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create a new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     // Add user message
     const userMessage = {
       text: inputValue,
@@ -44,13 +63,18 @@ const TerminalChat = () => {
       timestamp: new Date().toISOString()
     };
     
+    // Add to display messages
+    setDisplayMessages(prev => [...prev, userMessage]);
+    
+    // Add to actual message history for the API
     setMessages(prev => [...prev, userMessage]);
+    
     setInputValue('');
     setIsLoading(true);
     setError(null);
     
     try {
-      // Get chat history excluding the latest user message (which we'll send separately)
+      // Get chat history for the API - only include actual conversation, not welcome message
       const history = messages.map(msg => ({
         role: msg.role,
         text: msg.text
@@ -65,28 +89,70 @@ const TerminalChat = () => {
           message: userMessage.text,
           history: history
         }),
+        signal: abortControllerRef.current.signal,
+        // Client timeout as backup to server timeout
+        timeout: 28000
       });
       
+      if (response.status === 504) {
+        throw new Error("The blockchain nodes are congested! The AI request timed out. Try a simpler query.");
+      }
+      
       if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || 
+          errorData?.details || 
+          `Server responded with ${response.status}`
+        );
       }
       
       const data = await response.json();
       
-      // Add AI response to chat
-      setMessages(prev => [
-        ...prev, 
-        {
-          text: data.response,
-          role: 'model',
-          timestamp: new Date().toISOString()
-        }
-      ]);
+      // Create bot response message
+      const botMessage = {
+        text: data.response,
+        role: 'model',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Add bot message to display messages
+      setDisplayMessages(prev => [...prev, botMessage]);
+      
+      // Add bot message to actual history for API
+      setMessages(prev => [...prev, botMessage]);
+      
     } catch (err) {
       console.error('Error sending message:', err);
-      setError('Connection failed. The blockchain must be congested! Try again later.');
+      
+      // Ignore abort errors (user canceled or component unmounted)
+      if (err.name === 'AbortError') {
+        return;
+      }
+      
+      // Format error message based on type
+      let errorMessage = 'Connection failed. The blockchain must be congested! Try again later.';
+      
+      if (err.message.includes('timed out')) {
+        errorMessage = err.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Allow user to cancel request
+  const handleCancelRequest = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+      setError("Query canceled. What else would you like to explore?");
     }
   };
 
@@ -98,7 +164,7 @@ const TerminalChat = () => {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>JaqBot <span className="version">v0.1.0</span> <span className="cursor"></span></h1>
+        <h1>aiQbek <span className="version">v0.1.0</span> <span className="cursor"></span></h1>
         <div className="header-links">
           <a href="https://twitter.com/jaqbek_eth" target="_blank" rel="noopener noreferrer">@jaqbek_eth</a> | 
           <a href="https://github.com/0xjaqbek" target="_blank" rel="noopener noreferrer">0xjaqbek</a> | 
@@ -109,14 +175,14 @@ const TerminalChat = () => {
       <div className="chat-container">
         {error && <div className="error-message">{error}</div>}
         
-        {messages.map((message, index) => (
+        {displayMessages.map((message, index) => (
           <div 
             key={index} 
             className={`message ${message.role === 'user' ? 'user-message' : 'bot-message'}`}
           >
             <div className="message-prompt">
               <span className="terminal-prefix">{renderPrompt(message.role)}</span>
-              {message.role === 'user' ? 'You' : 'JaqBot'}:
+              {message.role === 'user' ? 'You' : 'aiQbek'}:
             </div>
             <div className="message-text">{message.text}</div>
           </div>
@@ -125,10 +191,11 @@ const TerminalChat = () => {
         {isLoading && (
           <div className="message bot-message">
             <div className="message-prompt">
-              <span className="terminal-prefix"></span> JaqBot:
+              <span className="terminal-prefix"></span> aiQbek:
             </div>
             <div className="message-text">
               <div className="loading"></div> Mining response...
+              <button onClick={handleCancelRequest} className="cancel-button">Cancel</button>
             </div>
           </div>
         )}

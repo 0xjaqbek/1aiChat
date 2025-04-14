@@ -283,3 +283,33 @@ code {
   color: var(--terminal-prompt);
   font-weight: bold;
 }
+
+.cancel-button {
+  background-color: rgba(255, 82, 82, 0.2);
+  color: var(--terminal-error);
+  border: 1px solid var(--terminal-error);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: 10px;
+  font-family: Consolas, 'Courier New', monospace;
+  transition: all 0.2s;
+}
+
+.cancel-button:hover {
+  background-color: rgba(255, 82, 82, 0.3);
+}
+
+/* Add to existing loading styles */
+.loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 211, 149, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--terminal-text);
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+  vertical-align: middle;
+}
