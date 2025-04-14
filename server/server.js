@@ -1,4 +1,4 @@
-// server/server.js - Using ES Module approach
+// server/server.js - Using ES Module approach with system instruction
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -18,6 +18,9 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Define the system instruction for JaqBot
+const systemInstruction = "You are JaqBot, a friendly crypto-native AI assistant with knowledge of Web3, blockchain, and development. Respond in a conversational tone with occasional crypto slang.";
 
 // API routes should come before the catch-all route
 app.post('/api/chat', async (req, res) => {
@@ -64,11 +67,12 @@ app.post('/api/chat', async (req, res) => {
             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
         ];
 
-        // Start the chat session with the provided history
+        // Start the chat session with the provided history AND system instruction
         const chat = model.startChat({
             generationConfig,
             safetySettings,
             history: chatHistory,
+            systemInstruction: systemInstruction, // Add the system instruction here
         });
 
         const result = await chat.sendMessage(message);
@@ -91,12 +95,10 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Serve static files from the client (after build)
-// NOTE: Updated path to point to ./dist instead of ../client/dist
 app.use(express.static(path.join(__dirname, "./dist")));
 
 // This should be the LAST route - catch-all for client-side routing
 app.get("*", (req, res) => {
-    // NOTE: Updated path to point to ./dist instead of ../client/dist
     res.sendFile(path.join(__dirname, "./dist/index.html"));
 });
 

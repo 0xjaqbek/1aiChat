@@ -9,6 +9,15 @@ const TerminalChat = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Add initial welcome message from JaqBot
+  useEffect(() => {
+    setMessages([{
+      text: "GM! I'm JaqBot, your crypto-native assistant. Ready to dive into Web3, smart contracts, or anything blockchain? WAGMI! 🚀",
+      role: 'model',
+      timestamp: new Date().toISOString()
+    }]);
+  }, []);
+
   // Auto scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,31 +84,29 @@ const TerminalChat = () => {
       ]);
     } catch (err) {
       console.error('Error sending message:', err);
-      setError('Failed to communicate with the AI. Please try again later.');
+      setError('Connection failed. The blockchain must be congested! Try again later.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Terminal prompt character
+  // Enhanced terminal prompt character for crypto theme
   const renderPrompt = (role) => {
-    return role === 'user' ? '>' : '$';
+    return role === 'user' ? '>' : 'Ξ>';
   };
 
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>Talk with AI</h1>
+        <h1>JaqBot <span className="version">v0.1.0</span> <span className="cursor"></span></h1>
+        <div className="header-links">
+          <a href="https://twitter.com/jaqbek_eth" target="_blank" rel="noopener noreferrer">@jaqbek_eth</a> | 
+          <a href="https://github.com/0xjaqbek" target="_blank" rel="noopener noreferrer">0xjaqbek</a> | 
+          <a href="https://becomingweb3.dev" target="_blank" rel="noopener noreferrer">becomingweb3.dev</a>
+        </div>
       </header>
       
       <div className="chat-container">
-        {messages.length === 0 && (
-          <div className="welcome-message">
-            <p>Welcome to Terminal AI Chat. Type a message to begin.</p>
-            <p><span className="terminal-prefix">$</span> system initialized...</p>
-          </div>
-        )}
-        
         {error && <div className="error-message">{error}</div>}
         
         {messages.map((message, index) => (
@@ -109,7 +116,7 @@ const TerminalChat = () => {
           >
             <div className="message-prompt">
               <span className="terminal-prefix">{renderPrompt(message.role)}</span>
-              {message.role === 'user' ? 'You' : 'AI'}:
+              {message.role === 'user' ? 'You' : 'JaqBot'}:
             </div>
             <div className="message-text">{message.text}</div>
           </div>
@@ -118,10 +125,10 @@ const TerminalChat = () => {
         {isLoading && (
           <div className="message bot-message">
             <div className="message-prompt">
-              <span className="terminal-prefix">$</span> AI:
+              <span className="terminal-prefix"></span> JaqBot:
             </div>
             <div className="message-text">
-              <div className="loading"></div> Processing...
+              <div className="loading"></div> Mining response...
             </div>
           </div>
         )}
@@ -135,7 +142,7 @@ const TerminalChat = () => {
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          placeholder="Type your message..."
+          placeholder="Ask about Web3, DeFi, or dev..."
           className="message-input"
           ref={inputRef}
           disabled={isLoading}
@@ -148,6 +155,12 @@ const TerminalChat = () => {
           SEND
         </button>
       </form>
+      
+      <footer className="app-footer">
+        <div className="network-status">
+          <span className="network-indicator"></span> Connected to Ethereum Mainnet
+        </div>
+      </footer>
     </div>
   );
 };
