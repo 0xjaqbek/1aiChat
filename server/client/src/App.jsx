@@ -14,7 +14,7 @@ const TerminalChat = () => {
   // Add initial welcome message from aiQbek - for display only, not sent to API
   useEffect(() => {
     setDisplayMessages([{
-      text: "GM! I'm aiQbek. Ready to dive into AI, Web3, smart contracts, or anything blockchain? WAGMI! 🚀",
+      text: "GM! I'm aiQbek0.1 First LLM (gemini2.0 Flash) delivered by jaqbek. Ready to dive into AI, Web3, smart contracts, or anything blockchain? WAGMI! 🚀",
       role: 'model',
       timestamp: new Date().toISOString()
     }]);
